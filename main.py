@@ -1,5 +1,6 @@
 import data_loader
 import data_processor
+import dashboard
 
 def main():
     config = data_loader.load_config('config.json')
@@ -20,17 +21,22 @@ def main():
     if len(region_data) == 0:
         print(f"No data found for region: {config['region']}")
         return
-    print(region_data)
+#    print(region_data)
 
     target_year_data = data_processor.filter_by_year(region_data, config['year'])
 
     if len(target_year_data) == 0:
         print(f"No data found for year: {config['year']}")
         return
-    print(target_year_data)
+#    print(target_year_data)
 
     result_value = data_processor.aggregate_stats(target_year_data, config['operation'])
-    print(result_value)
+#    print(result_value)
+
+    dashboard.show_results(result_value, config)
+    
+    if config['output'] == 'dashboard':
+        dashboard.plot_data(region_data, target_year_data, config)
     
 main()
     
