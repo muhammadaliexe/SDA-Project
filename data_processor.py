@@ -8,8 +8,15 @@ REGION_MAPPING = {
     "Latin America & Caribbean": ["South America", "North America"]
 }
 
-def filter_by_region(data, region):
-    filtered = list(filter(lambda x: x['Region'] == region, data))
+def filter_by_region(data, region_name):
+    if region_name in REGION_MAPPING:
+        target_values = REGION_MAPPING[region_name]
+        print(f"Mapping '{region_name}' to continents: {target_values}")
+    else:
+        target_values = [region_name]
+
+    filtered = list(filter(lambda x: x['Region'] in target_values, data))
+    
     return filtered
 
 def filter_by_year(data, year):
