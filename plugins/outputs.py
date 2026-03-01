@@ -36,8 +36,6 @@ class ConsoleWriter:
 
 class GraphicsChartWriter:
     def write_data(self, data, config):
-        text_writer = ConsoleWriter()
-        text_writer.write_data(data, config)
 
         names = list(map(lambda item: item['Country Name'], data))
         values = list(map(lambda item: item['Value'], data))
