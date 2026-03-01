@@ -19,35 +19,7 @@ class TransformationEngine:
         operation = self.config['operation']
         year_setting = self.config['year']
 
-        # OPERATION 7: CONTINENT CONTRIBUTION TO GLOBAL GDP
-        if operation == "continent_contribution":
-            if type(year_setting) is not list or len(year_setting) != 2:
-                print("Error: Year must be a list of two years like [2014, 2020].")
-                return
-                
-            start_year = int(year_setting[0])
-            end_year = int(year_setting[1])
-
-            valid_data = list(filter(lambda item: start_year <= item['Year'] <= end_year, raw_data))
-            
-            if len(valid_data) == 0:
-                print("No data found for this year range.")
-                return
-
-            all_regions = list(set(map(lambda item: item['Region'], valid_data)))
-            real_continents = list(filter(lambda r: r in VALID_CONTINENTS, all_regions))
-
-            def calc_total_contribution(reg):
-                reg_items = list(filter(lambda item: item['Region'] == reg, valid_data))
-                reg_values = list(map(lambda item: item['Value'], reg_items))
-                total = sum(reg_values)
-                return {'Country Name': reg, 'Value': total}
-
-            final_data = list(map(calc_total_contribution, real_continents))
-            final_data = sorted(final_data, key=lambda x: x['Value'], reverse=True)
-
-            self.sink.write_data(final_data, self.config)
-            return
+        
 
         # OPERATION 6: FASTEST GROWING CONTINENT
         if operation == "fastest_growing_continent":
