@@ -44,8 +44,27 @@ class GraphicsChartWriter:
 
         plt.figure(figsize=(12, 6))
         
+        if op == "continent_contribution":
+
+            plt.pie(values, labels=names, autopct='%1.1f%%', startangle=140, colors=plt.cm.Paired.colors)
+            plt.title("Continent Contribution to Global GDP (" + str(config['year'][0]) + " to " + str(config['year'][1]) + ")")
             
-        if op == "growth_rate":
+        elif op == "fastest_growing_continent":
+            plt.bar(names, values, color='lightgreen')
+            plt.title("Continent GDP Growth Rate (" + str(config['year'][0]) + " to " + str(config['year'][1]) + ")")
+            plt.ylabel("Growth Rate (%)")
+            plt.xlabel("Continent")
+            plt.xticks(rotation=45, ha='right')
+
+        elif op == "global_trend":
+            plt.plot(names, values, marker='s', color='orange', linewidth=2)
+            plt.fill_between(names, values, color='orange', alpha=0.3)
+            plt.title("Total Global GDP Trend (" + str(config['year'][0]) + " to " + str(config['year'][1]) + ")")
+            plt.ylabel("Global GDP (USD)")
+            plt.xlabel("Year")
+            plt.xticks(rotation=45)    
+        
+        elif op == "growth_rate":
             plt.plot(names, values, marker='o', color='green', linestyle='-', linewidth=2)
             plt.title("GDP Growth Rate in " + config['region'] + " (" + str(config['year'][0]) + " to " + str(config['year'][1]) + ")")
             plt.ylabel("Growth Rate (%)")
