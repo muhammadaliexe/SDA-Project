@@ -19,6 +19,100 @@ class TransformationEngine:
         operation = self.config['operation']
         year_setting = self.config['year']
 
+        # OPERATION 7: CONTINENT CONTRIBUTION TO GLOBAL GDP
+        if operation == "continent_contribution":
+            if type(year_setting) is not list or len(year_setting) != 2:
+                print("Error: Year must be a list of two years like [2014, 2020].")
+                return
+                
+            start_year = int(year_setting[0])
+            end_year = int(year_setting[1])
+
+            valid_data = list(filter(lambda item: start_year <= item['Year'] <= end_year, raw_data))
+            
+            if len(valid_data) == 0:
+                print("No data found for this year range.")
+                return
+
+            all_regions = list(set(map(lambda item: item['Region'], valid_data)))
+            real_continents = list(filter(lambda r: r in VALID_CONTINENTS, all_regions))
+
+            def calc_total_contribution(reg):
+                reg_items = list(filter(lambda item: item['Region'] == reg, valid_data))
+                reg_values = list(map(lambda item: item['Value'], reg_items))
+                total = sum(reg_values)
+                return {'Country Name': reg, 'Value': total}
+
+            final_data = list(map(calc_total_contribution, real_continents))
+            final_data = sorted(final_data, key=lambda x: x['Value'], reverse=True)
+
+            self.sink.write_data(final_data, self.config)
+            return
+
+        # OPERATION 6: FASTEST GROWING CONTINENT
+        if operation == "fastest_growing_continent":
+            if type(year_setting) is not list or len(year_setting) != 2:
+                print("Error: Year must be a list of two years like [2014, 2020].")
+                return
+                
+            start_year = int(year_setting[0])
+            end_year = int(year_setting[1])
+
+            start_data = list(filter(lambda item: item['Year'] == start_year, raw_data))
+            end_data = list(filter(lambda item: item['Year'] == end_year, raw_data))
+            
+            all_regions = list(set(map(lambda item: item['Region'], start_data + end_data)))
+
+            real_continents = list(filter(lambda r: r in VALID_CONTINENTS, all_regions))
+
+            def calc_cont_growth(reg):
+                s_items = list(filter(lambda item: item['Region'] == reg, start_data))
+                e_items = list(filter(lambda item: item['Region'] == reg, end_data))
+                
+                s_val = sum(list(map(lambda item: item['Value'], s_items)))
+                e_val = sum(list(map(lambda item: item['Value'], e_items)))
+                
+                if s_val == 0:
+                    growth = 0
+                else:
+                    growth = ((e_val - s_val) / s_val) * 100
+                    
+                return {'Country Name': reg, 'Value': growth}
+
+            final_data = list(map(calc_cont_growth, real_continents))
+            final_data = sorted(final_data, key=lambda x: x['Value'], reverse=True)
+
+            self.sink.write_data(final_data, self.config)
+            return
+
+        # OPERATION 5: GLOBAL TREND
+        if operation == "global_trend":
+            if type(year_setting) is not list or len(year_setting) != 2:
+                print("Error: For global_trend, year must be a list of two years like [2010, 2020].")
+                return
+                
+            start_year = int(year_setting[0])
+            end_year = int(year_setting[1])
+
+            valid_data = list(filter(lambda item: start_year <= item['Year'] <= end_year, raw_data))
+            
+            if len(valid_data) == 0:
+                print("No data found for this year range.")
+                return
+
+            years_list = sorted(list(set(map(lambda item: item['Year'], valid_data))))
+
+            def calc_year_total(yr):
+                yr_items = list(filter(lambda item: item['Year'] == yr, valid_data))
+                yr_values = list(map(lambda item: item['Value'], yr_items))
+                total = sum(yr_values)
+                return {'Country Name': str(yr), 'Value': total}
+
+            final_data = list(map(calc_year_total, years_list))
+            
+            self.sink.write_data(final_data, self.config)
+            return
+
         # OPERATION 4: CONTINENT AVERAGE
         if operation == "continent_average":
             if type(year_setting) is not list or len(year_setting) != 2:

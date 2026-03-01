@@ -4,5 +4,5 @@
     "file_path": "data/gdp_with_continent_filled.json",
     "region": "All",
     "year": [2014, 2020],
-    "operation": "continent_average"
+    "operation": "fastest_growing_continent"
 }
