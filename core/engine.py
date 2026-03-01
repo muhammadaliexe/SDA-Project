@@ -11,36 +11,29 @@ REGION_MAPPING = {
 def filter_by_region(data, region_name):
     if region_name in REGION_MAPPING:
         target_values = REGION_MAPPING[region_name]
-        print(f"Mapping '{region_name}' to continents: {target_values}")
     else:
         target_values = [region_name]
-
-    filtered = list(filter(lambda x: x['Region'] in target_values, data))
     
-    return filtered
+    # filter() takes the items that match the condition
+    return list(filter(lambda item: item['Region'] in target_values, data))
 
 def filter_by_year(data, year):
-    filtered = list(filter(lambda x: x['Year'] == int(year), data))
-    return filtered
+    # filter() checks the year for every row instantly
+    return list(filter(lambda item: item['Year'] == int(year), data))
 
 def aggregate_stats(filtered_data, operation):
     if len(filtered_data) == 0:
         return 0
-
-    gdp_values = list(map(lambda x: x['Value'], filtered_data))
     
-    total_gdp = sum(gdp_values)
+    # map() extracts just the 'Value' from every row into a simple list
+    gdp_values = list(map(lambda item: item['Value'], filtered_data))
     
+    total = sum(gdp_values)
+        
     if operation == "sum":
-        return total_gdp
-    
+        return total
+        
     if operation == "average":
-        return total_gdp / len(gdp_values)
+        return total / len(filtered_data)
     
     return 0
-
-def get_country_names(filtered_data):
-    return list(map(lambda x: x['Country Name'], filtered_data))
-
-def get_gdp_values(filtered_data):
-    return list(map(lambda x: x['Value'], filtered_data))
