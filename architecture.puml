@@ -1,0 +1,91 @@
+@startuml
+
+skinparam componentStyle uml2
+skinparam packageStyle rectangle
+skinparam classAttributeIconSize 0
+
+' --- Packages and Modules ---
+
+package "Root Directory" {
+    class "main.py\n(The Orchestrator)" as Main {
+        + main()
+        - Reads config.json
+        - Injects dependencies
+    }
+    
+    file "config.json" as Config
+}
+
+package "core/" <<Folder>> {
+    package "contracts.py" <<Module>> {
+        interface "DataReader\n<<Protocol>>" as DataReader {
+            + read_data(file_path)
+        }
+        
+        interface "DataSink\n<<Protocol>>" as DataSink {
+            + write_data(data, config)
+        }
+    }
+
+    package "engine.py" <<Module>> {
+        class "TransformationEngine" as Engine {
+            - sink : DataSink
+            - config : dict
+            + __init__(sink, config)
+            + execute(raw_data)
+        }
+    }
+}
+
+package "plugins/" <<Folder>> {
+    package "inputs.py" <<Module>> {
+        class "CsvReader" as CsvReader {
+            + read_data(file_path)
+        }
+        class "JsonReader" as JsonReader {
+            + read_data(file_path)
+        }
+    }
+
+    package "outputs.py" <<Module>> {
+        class "ConsoleWriter" as ConsoleWriter {
+            + write_data(data, config)
+        }
+        class "GraphicsChartWriter" as GraphicsChartWriter {
+            + write_data(data, config)
+        }
+    }
+}
+
+' --- Relationships and Dependencies ---
+
+Main ..> Config : "Reads"
+
+' Dependency Injection
+Main ..> Engine : "Creates & Starts"
+Main ..> JsonReader : "Creates tool"
+Main ..> GraphicsChartWriter : "Creates tool"
+
+' Dependency Inversion Principle (DIP)
+Engine o--> DataSink : "Depends on abstraction"
+
+' Duck Typing (Implicit Interfaces)
+CsvReader .up.|> DataReader : "<<Duck Typing>>"
+JsonReader .up.|> DataReader : "<<Duck Typing>>"
+
+ConsoleWriter .up.|> DataSink : "<<Duck Typing>>"
+GraphicsChartWriter .up.|> DataSink : "<<Duck Typing>>"
+
+' Notes to explain the architecture
+note right of Main
+  1. Reads Config
+  2. Creates Output plugin
+  3. Injects Output into Engine
+end note
+
+note top of DataSink
+  The Rulebook:
+  Plugins must follow this
+end note
+
+@enduml
