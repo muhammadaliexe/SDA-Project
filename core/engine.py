@@ -15,18 +15,21 @@ class TransformationEngine:
         self.sink = sink
         self.config = config
 
+    def _validate_year_range(self, year_setting, operation):
+        if not isinstance(year_setting, list) or len(year_setting) != 2:
+            print(f"Error: For {operation}, year must be a list of two years like [2014, 2020].")
+            return None, None
+        return int(year_setting[0]), int(year_setting[1])
+
     def execute(self, raw_data):
         operation = self.config['operation']
         year_setting = self.config['year']
 
         # OPERATION 7: CONTINENT CONTRIBUTION TO GLOBAL GDP
         if operation == "continent_contribution":
-            if type(year_setting) is not list or len(year_setting) != 2:
-                print("Error: Year must be a list of two years like [2014, 2020].")
+            start_year, end_year = self._validate_year_range(year_setting, operation)
+            if start_year is None:
                 return
-                
-            start_year = int(year_setting[0])
-            end_year = int(year_setting[1])
 
             valid_data = list(filter(lambda item: start_year <= item['Year'] <= end_year, raw_data))
             
@@ -51,12 +54,9 @@ class TransformationEngine:
 
         # OPERATION 6: FASTEST GROWING CONTINENT
         if operation == "fastest_growing_continent":
-            if type(year_setting) is not list or len(year_setting) != 2:
-                print("Error: Year must be a list of two years like [2014, 2020].")
+            start_year, end_year = self._validate_year_range(year_setting, operation)
+            if start_year is None:
                 return
-                
-            start_year = int(year_setting[0])
-            end_year = int(year_setting[1])
 
             start_data = list(filter(lambda item: item['Year'] == start_year, raw_data))
             end_data = list(filter(lambda item: item['Year'] == end_year, raw_data))
@@ -87,12 +87,9 @@ class TransformationEngine:
 
         # OPERATION 5: GLOBAL TREND
         if operation == "global_trend":
-            if type(year_setting) is not list or len(year_setting) != 2:
-                print("Error: For global_trend, year must be a list of two years like [2010, 2020].")
+            start_year, end_year = self._validate_year_range(year_setting, operation)
+            if start_year is None:
                 return
-                
-            start_year = int(year_setting[0])
-            end_year = int(year_setting[1])
 
             valid_data = list(filter(lambda item: start_year <= item['Year'] <= end_year, raw_data))
             
@@ -115,12 +112,9 @@ class TransformationEngine:
 
         # OPERATION 4: CONTINENT AVERAGE
         if operation == "continent_average":
-            if type(year_setting) is not list or len(year_setting) != 2:
-                print("Error: For continent_average, year must be a list of two years like [2014, 2020].")
+            start_year, end_year = self._validate_year_range(year_setting, operation)
+            if start_year is None:
                 return
-                
-            start_year = int(year_setting[0])
-            end_year = int(year_setting[1])
 
             valid_data = list(filter(lambda item: start_year <= item['Year'] <= end_year, raw_data))
             
@@ -163,12 +157,9 @@ class TransformationEngine:
 
         # OPERATION 3: GROWTH RATE (Countries)
         if operation == "growth_rate":
-            if type(year_setting) is not list or len(year_setting) != 2:
-                print("Error: For growth_rate, year must be a list of two years like [2014, 2020].")
+            start_year, end_year = self._validate_year_range(year_setting, operation)
+            if start_year is None:
                 return
-                
-            start_year = int(year_setting[0])
-            end_year = int(year_setting[1])
             
             start_data = list(filter(lambda item: item['Year'] == start_year, region_data))
             end_data = list(filter(lambda item: item['Year'] == end_year, region_data))
@@ -184,14 +175,17 @@ class TransformationEngine:
             def calc_growth(item):
                 start_val = start_dict[item['Country Name']]
                 end_val = item['Value']
-                growth = ((end_val - start_val) / start_val) * 100
+                if start_val == 0:
+                    growth = 0
+                else:
+                    growth = ((end_val - start_val) / start_val) * 100
                 return {'Country Name': item['Country Name'], 'Value': growth}
 
             final_data = list(map(calc_growth, valid_end_data))
 
         # OPERATION 1 & 2: TOP OR BOTTOM 10
         elif operation in ["top", "bottom"]:
-            if type(year_setting) is list:
+            if isinstance(year_setting, list):
                 target_year = int(year_setting[0])
             else:
                 target_year = int(year_setting)
@@ -208,6 +202,10 @@ class TransformationEngine:
                 sorted_data = sorted(year_data, key=lambda x: x['Value'], reverse=False)
                 
             final_data = sorted_data[:10]
+
+        else:
+            print("Error: Unsupported operation.")
+            return
 
         if len(final_data) == 0:
             print("No data to show.")

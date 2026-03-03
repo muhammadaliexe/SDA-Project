@@ -26,7 +26,11 @@ def main():
         return
         
     with open(config_file, 'r') as f:
-        config = json.load(f)
+        try:
+            config = json.load(f)
+        except json.JSONDecodeError:
+            print("Error: config.json contains invalid JSON.")
+            return
 
     required_keys = {'input', 'output', 'file_path', 'region', 'year', 'operation'}
     if not required_keys.issubset(config.keys()):
@@ -66,4 +70,5 @@ def main():
 
     engine.execute(raw_data)
 
-main()
+if __name__ == '__main__':
+    main()
