@@ -15,3 +15,7 @@ def do_work(cfg, in_q, out_q):
             print(f"SECURITY ALERT: Dropped bad packet from {pkt.get('entity_name')}")
 
     list(map(check_packet, iter(in_q.get, None)))
+def get_avg(num_list):
+    if not num_list:
+        return 0
+    return sum(num_list) / len(num_list)
