@@ -15,7 +15,22 @@ def do_work(cfg, in_q, out_q):
             print(f"SECURITY ALERT: Dropped bad packet from {pkt.get('entity_name')}")
 
     list(map(check_packet, iter(in_q.get, None)))
+
 def get_avg(num_list):
     if not num_list:
         return 0
     return sum(num_list) / len(num_list)
+
+class AvgCalc:
+    def __init__(self, w_size):
+        self.w_size = w_size
+        self.history = []
+
+    def add_new_val(self, pkt):
+        self.history.append(pkt['metric_value'])
+        
+        if len(self.history) > self.w_size:
+            self.history.pop(0)
+            
+        pkt['computed_metric'] = get_avg(self.history)
+        return pkt
