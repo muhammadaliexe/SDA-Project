@@ -1,37 +1,31 @@
 import matplotlib.pyplot as plt
+import matplotlib.animation as animation
+from core.engine import AvgCalc
 
-class ConsoleWriter:
-    def write_data(self, data, config):
-        print("\n========================================")
-        print("DASHBOARD RESULTS")
-        print("========================================")
-        
-        global_ops = ["continent_average", "global_trend", "fastest_growing_continent", "continent_contribution"]
-        
-        if config['operation'] in global_ops:
-            print("Region:    World")
-            print("Year:      " + str(config['year'][0]) + " to " + str(config['year'][1]))
-        else:
-            print("Region:    " + config['region'])
-            print("Year:      " + str(config['year']))
-            
-        print("Operation: " + config['operation'])
-        print("----------------------------------------")
-        
-        is_growth = (config['operation'] in ["growth_rate", "fastest_growing_continent"])
-        is_contribution = (config['operation'] == "continent_contribution")
-        
-        if is_contribution:
+class SysTracker:
+    def __init__(self, in_q, out_q, mx_size):
+        self.in_q = in_q
+        self.out_q = out_q
+        self.mx_size = mx_size
+        self.viewers = []
 
-            total_val = sum(list(map(lambda x: x['Value'], data)))
-            text_lines = list(map(lambda item: item['Country Name'] + ": " + str(round((item['Value']/total_val)*100, 2)) + "%", data))
-        elif is_growth:
-            text_lines = list(map(lambda item: item['Country Name'] + ": " + str(round(item['Value'], 2)) + "%", data))
-        else:
-            text_lines = list(map(lambda item: item['Country Name'] + ": $" + str(round(item['Value'], 2)), data))
-            
-        print('\n'.join(text_lines))
-        print("========================================\n")
+    def add_viewer(self, v):
+        self.viewers.append(v)
+
+    def alert_viewers(self):
+        in_sz = self.in_q.qsize()
+        out_sz = self.out_q.qsize()
+
+        in_stat = self.pick_color(in_sz)
+        out_stat = self.pick_color(out_sz)
+
+        list(map(lambda v: v.update_colors(in_stat, out_stat), self.viewers))
+
+    def pick_color(self, sz):
+        pct = (sz / self.mx_size) * 100
+        if pct < 50: return "green"
+        if pct < 80: return "yellow"
+        return "red"
 
 
 class GraphicsChartWriter:
