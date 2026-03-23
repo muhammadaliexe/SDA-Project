@@ -1,9 +1,12 @@
 from typing import Protocol
 
-class DataReader(Protocol):
-    def read_data(self, file_path):
+class TrackerRule(Protocol):
+    def add_viewer(self, viewer):
         pass
 
-class DataSink(Protocol):
-    def write_data(self, data, config):
+    def alert_viewers(self):
+        pass
+
+class ScreenRule(Protocol):
+    def update_colors(self, raw_status, done_status):
         pass
