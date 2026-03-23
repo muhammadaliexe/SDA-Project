@@ -27,60 +27,59 @@ class SysTracker:
         if pct < 80: return "yellow"
         return "red"
 
+class LiveScreen:
+    def __init__(self, cfg, out_q, tracker):
+        self.cfg = cfg
+        self.out_q = out_q
+        self.tracker = tracker
+        self.tracker.add_viewer(self)
 
-class GraphicsChartWriter:
-    def write_data(self, data, config):
+        w_size = cfg["processing"]["stateful_tasks"]["running_average_window_size"]
+        self.math_guy = AvgCalc(w_size)
 
-        names = list(map(lambda item: item['Country Name'], data))
-        values = list(map(lambda item: item['Value'], data))
-        
-        op = config['operation']
+        self.x_times = []
+        self.y_raw = []
+        self.y_avg = []
+        self.color1 = "gray"
+        self.color2 = "gray"
 
-        plt.figure(figsize=(12, 6))
-        
-        if op == "continent_contribution":
+        self.fig, (self.ax1, self.ax2) = plt.subplots(2, 1, figsize=(8, 6), gridspec_kw={'height_ratios': [3, 1]})
+        self.fig.canvas.manager.set_window_title('Phase 3 Real-Time Dashboard')
 
-            plt.pie(values, labels=names, autopct='%1.1f%%', startangle=140, colors=plt.cm.Paired.colors)
-            plt.title("Continent Contribution to Global GDP (" + str(config['year'][0]) + " to " + str(config['year'][1]) + ")")
+    def update_colors(self, stat1, stat2):
+        self.color1 = stat1
+        self.color2 = stat2
+
+    def empty_q_func(self):
+        if not self.out_q.empty():
+            pkt = self.out_q.get_nowait()
+            done_pkt = self.math_guy.add_new_val(pkt)
             
-        elif op == "fastest_growing_continent":
-            plt.bar(names, values, color='lightgreen')
-            plt.title("Continent GDP Growth Rate (" + str(config['year'][0]) + " to " + str(config['year'][1]) + ")")
-            plt.ylabel("Growth Rate (%)")
-            plt.xlabel("Continent")
-            plt.xticks(rotation=45, ha='right')
+            self.x_times.append(done_pkt['time_period'])
+            self.y_raw.append(done_pkt['metric_value'])
+            self.y_avg.append(done_pkt['computed_metric'])
+            
+            self.empty_q_func()
 
-        elif op == "global_trend":
-            plt.plot(names, values, marker='s', color='orange', linewidth=2)
-            plt.fill_between(names, values, color='orange', alpha=0.3)
-            plt.title("Total Global GDP Trend (" + str(config['year'][0]) + " to " + str(config['year'][1]) + ")")
-            plt.ylabel("Global GDP (USD)")
-            plt.xlabel("Year")
-            plt.xticks(rotation=45)    
-        
-        elif op == "growth_rate":
-            plt.plot(names, values, marker='o', color='green', linestyle='-', linewidth=2)
-            plt.title("GDP Growth Rate in " + config['region'] + " (" + str(config['year'][0]) + " to " + str(config['year'][1]) + ")")
-            plt.ylabel("Growth Rate (%)")
-            plt.xlabel("Country")
-            plt.xticks(rotation=90, ha='center', fontsize=8)
-            
-        elif op == "continent_average":
-            plt.bar(names, values, color='purple')
-            plt.title("Average GDP by Continent (" + str(config['year'][0]) + " to " + str(config['year'][1]) + ")")
-            plt.ylabel("Average GDP (USD)")
-            plt.xlabel("Continent")
-            plt.xticks(rotation=45, ha='right')
-            
-        elif op in ["top", "bottom"]:
-            plt.bar(names, values, color='skyblue')
-            if op == "top":
-                plt.title("Top 10 GDP in " + config['region'] + " (" + str(config['year']) + ")")
-            else:
-                plt.title("Bottom 10 GDP in " + config['region'] + " (" + str(config['year']) + ")")
-            plt.ylabel("GDP (USD)")
-            plt.xlabel("Country")
-            plt.xticks(rotation=90, ha='center', fontsize=8)
-            
+    def draw_frame(self, frame_num):
+        self.empty_q_func()
+
+        self.tracker.alert_viewers()
+
+        self.ax1.clear()
+        self.ax1.plot(self.x_times[-20:], self.y_raw[-20:], label='Authentic Raw', marker='o', color='blue')
+        self.ax1.plot(self.x_times[-20:], self.y_avg[-20:], label='Running Avg', marker='x', color='orange')
+        self.ax1.set_title("Live Sensor Data & Averages")
+        self.ax1.legend()
+
+        self.ax2.clear()
+        self.ax2.bar(["Raw Stream", "Processed Stream"], [1, 1], color=[self.color1, self.color2])
+        self.ax2.set_ylim(0, 1)
+        self.ax2.set_title("Pipeline Telemetry")
+        self.ax2.set_yticks([])
+
+    def run(self):
+        print("Starting Dashboard...")
+        self.ani = animation.FuncAnimation(self.fig, self.draw_frame, interval=500, cache_frame_data=False)
         plt.tight_layout()
         plt.show()
