@@ -29,7 +29,7 @@ if __name__ == '__main__':
         args=(my_cfg, q1)
     )
     p_in.start()
-     def launch_w(w_id):
+    def launch_w(w_id):
         p = multiprocessing.Process(
             target=do_work, 
             args=(my_cfg, q1, q2)
