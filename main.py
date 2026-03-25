@@ -1,69 +1,31 @@
 import json
 import os
-from plugins.inputs import CsvReader, JsonReader
-from plugins.outputs import ConsoleWriter, GraphicsChartWriter
-from core.engine import TransformationEngine
+import multiprocessing
+from plugins.inputs import read_csv_stuff
+from core.engine import do_work
+from plugins.outputs import SysTracker, LiveScreen
 
-INPUT_DRIVERS = {
-    "csv": CsvReader,
-    "json": JsonReader
-}
-
-OUTPUT_DRIVERS = {
-    "console": ConsoleWriter,
-    "graphics": GraphicsChartWriter
-}
-
-def main():
-    config_file = 'config.json'
-    
-    if not os.path.exists(config_file):
-        print("Error: config.json file is missing.")
-        return
+def get_cfg(path='config.json'):
+    if not os.path.exists(path):
+        print(f"Error: Required file '{path}' is missing.")
+        return None
         
-    if os.path.getsize(config_file) == 0:
-        print("Error: config.json is empty.")
-        return
+    with open(path, 'r') as f:
+        return json.load(f)
+
+if __name__ == '__main__':
+    my_cfg = get_cfg()
+    if my_cfg is None:
+        exit()
         
-    with open(config_file, 'r') as f:
-        config = json.load(f)
+    max_q = my_cfg["pipeline_dynamics"]["stream_queue_max_size"]
+    w_count = my_cfg["pipeline_dynamics"]["core_parallelism"]
 
-    required_keys = {'input', 'output', 'file_path', 'region', 'year', 'operation'}
-    if not required_keys.issubset(config.keys()):
-        print("Error: Missing a required setting in config file.")
-        return
+    q1 = multiprocessing.Queue(maxsize=max_q)
+    q2 = multiprocessing.Queue(maxsize=max_q)
 
-    input_choice = config['input']
-    output_choice = config['output']
-    operation_choice = config['operation']
-
-    if input_choice not in INPUT_DRIVERS:
-        print("Error: Invalid input choice in config.")
-        return
-        
-    if output_choice not in OUTPUT_DRIVERS:
-        print("Error: Invalid output choice in config.")
-        return
-        
-    valid_operations = [
-        'top', 'bottom', 'growth_rate', 'continent_average', 
-        'global_trend', 'fastest_growing_continent', 'continent_contribution'
-    ]
-    if operation_choice not in valid_operations:
-        print("Error: Invalid operation in config file.")
-        return
-
-    reader = INPUT_DRIVERS[input_choice]()
-    writer = OUTPUT_DRIVERS[output_choice]()
-
-    engine = TransformationEngine(writer, config)
-
-    print("\nReading data...")
-    raw_data = reader.read_data(config['file_path'])
-    
-    if raw_data is None:
-        return
-
-    engine.execute(raw_data)
-
-main()
+    p_in = multiprocessing.Process(
+        target=read_csv_stuff, 
+        args=(my_cfg, q1)
+    )
+    p_in.start()
