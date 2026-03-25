@@ -29,3 +29,20 @@ if __name__ == '__main__':
         args=(my_cfg, q1)
     )
     p_in.start()
+     def launch_w(w_id):
+        p = multiprocessing.Process(
+            target=do_work, 
+            args=(my_cfg, q1, q2)
+        )
+        p.start()
+        return p
+
+    w_list = list(map(launch_w, range(w_count)))
+
+    my_tracker = SysTracker(q1, q2, max_q)
+    my_ui = LiveScreen(my_cfg, q2, my_tracker)
+    
+    my_ui.run()
+
+    p_in.terminate()
+    list(map(lambda p: p.terminate(), w_list))
